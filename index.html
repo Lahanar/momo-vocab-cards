@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mujira Ramingwong's IELTS English Vocabularty Flashcards</title>
+  <title>Enhanced IELTS Flashcards</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
-    #controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    #controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     button { padding: 8px 14px; cursor: pointer; }
     #flashcard { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
     #word { font-size: 2rem; font-weight: bold; cursor: pointer; }
@@ -21,7 +21,7 @@
     <button onclick="prevCard()">Previous</button>
     <button onclick="nextCard()">Next</button>
     <button onclick="shuffleCards()">Shuffle</button>
-    <!-- button onclick="toggleQuizMode()">Quiz Mode</button -->
+    <button onclick="toggleQuizMode()">Quiz Mode</button>
   </div>
 
   <div id="filters">
@@ -48,13 +48,13 @@
   </div>
 
 <script>
-  // CACHE-BUSTING URL to always fetch latest CSV
+  // Cache-busting CSV URL
   const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbYZwC-HcUDJK0JVkW4SC8j0DLDtVnCsR8uTmE_z3iSS8H9i9lmt5jB8FMVSVjQ_SDj_N56H-PfCtz/pub?gid=0&single=true&output=csv&t=" + new Date().getTime();
 
   let cards = [];
   let filteredCards = [];
   let index = 0;
-  //let quizMode = false;
+  let quizMode = false;
 
   // SM-2 spaced repetition data
   let sm2Data = JSON.parse(localStorage.getItem("sm2Data") || "{}");
@@ -62,33 +62,35 @@
   async function loadCSV() {
     const res = await fetch(csvURL);
     const text = await res.text();
-    const rows = text.split(/\r?\n/).map(r => r.split(","));
-    const header = rows.shift();
-
-    cards = rows.map(r => Object.fromEntries(header.map((h,i) => [h.trim(), r[i]])));
+    cards = parseCSV(text);
     filteredCards = [...cards];
-
     populateFilters();
     loadProgress();
     showCard();
   }
 
+  // Robust CSV parser to handle commas in quotes
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+    const headers = lines.shift().split(",");
+    return lines.map(line => {
+      const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+      const matches = line.match(regex);
+      return Object.fromEntries(headers.map((h, i) => [h.trim(), matches[i] ? matches[i].replace(/^"|"$/g, "") : ""]));
+    });
+  }
+
   function populateFilters() {
     const bandSet = new Set(cards.map(c => c.Band_Level));
     const posSet = new Set(cards.map(c => c.POS));
-
     const bandFilter = document.getElementById("bandFilter");
     const posFilter = document.getElementById("posFilter");
 
     bandSet.forEach(b => {
-      if (!Array.from(bandFilter.options).some(o => o.value === b)) {
-        bandFilter.innerHTML += `<option value="${b}">${b}</option>`;
-      }
+      if (![...bandFilter.options].some(o => o.value === b)) bandFilter.innerHTML += `<option value="${b}">${b}</option>`;
     });
     posSet.forEach(p => {
-      if (!Array.from(posFilter.options).some(o => o.value === p)) {
-        posFilter.innerHTML += `<option value="${p}">${p}</option>`;
-      }
+      if (![...posFilter.options].some(o => o.value === p)) posFilter.innerHTML += `<option value="${p}">${p}</option>`;
     });
   }
 
@@ -132,35 +134,21 @@
   }
 
   function applyFilters() {
-  const search = document.getElementById("search").value.toLowerCase();
-  const band = document.getElementById("bandFilter").value;
-  const pos = document.getElementById("posFilter").value;
+    const search = document.getElementById("search").value.toLowerCase();
+    const band = document.getElementById("bandFilter").value;
+    const pos = document.getElementById("posFilter").value;
 
-  // Filter the original cards array
-  filteredCards = cards.filter(card => 
-    (!band || card.Band_Level === band) &&
-    (!pos || card.POS === pos) &&
-    (
-      card.Word.toLowerCase().includes(search) ||
-      (card.Definition && card.Definition.toLowerCase().includes(search)) ||
-      (card.Example_Sentence && card.Example_Sentence.toLowerCase().includes(search))
-    )
-  );
+    filteredCards = cards.filter(card =>
+      (!band || card.Band_Level === band) &&
+      (!pos || card.POS === pos) &&
+      (card.Word.toLowerCase().includes(search) ||
+       (card.Definition && card.Definition.toLowerCase().includes(search)) ||
+       (card.Example_Sentence && card.Example_Sentence.toLowerCase().includes(search)))
+    );
 
-  if (filteredCards.length === 0) {
-    // If no cards match, show a message
-    const flashcard = document.getElementById("flashcard");
-    flashcard.textContent = "No results found.";
-    document.getElementById("quizInput").classList.add("hidden");
-    document.getElementById("feedback").textContent = "";
-    document.getElementById("progress").textContent = "";
-    return;
+    index = 0;
+    showCard();
   }
-
-  // Reset index to first matching card
-  index = 0;
-  showCard();
-}
 
   function updateProgress() {
     document.getElementById("progress").textContent = `Card ${index+1} / ${filteredCards.length}`;
@@ -180,10 +168,10 @@
     speechSynthesis.speak(utt);
   }
 
-  //function toggleQuizMode() {
-  //  quizMode = !quizMode;
-  //  alert("Quiz Mode " + (quizMode ? "ON" : "OFF"));
-  //}
+  function toggleQuizMode() {
+    quizMode = !quizMode;
+    alert("Quiz Mode " + (quizMode ? "ON" : "OFF"));
+  }
 
   function rateCard(quality) {
     const card = filteredCards[index];
