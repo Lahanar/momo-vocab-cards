@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;IELTS 8.0 Vocab Builder&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.card { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#word { font-size: 2.5em; color: #333; margin-bottom: 20px; cursor: pointer; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#definition, #example { font-size: 1.2em; color: #666; min-height: 50px; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;h2&gt;IELTS Band 8.0 Vocabulary&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="word"&gt;Click to Reveal&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="definition" style="display:none;"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="example" style="display:none;"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onclick="nextCard()"&gt;Next Word&lt;/button&gt;</p>
+<p class="p1">&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>// --- STEP 3: PASTE YOUR PUBLISHED SHEET URL HERE ---</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const GOOGLE_SHEET_URL = '<a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQbYZwC-HcUDJK0JVkW4SC8j0DLDtVnCsR8uTmE_z3iSS8H9i9lmt5jB8FMVSVjQ_SDj_N56H-PfCtz/pub?gid=0&amp;single=true&amp;output=csv">https://docs.google.com/spreadsheets/d/e/2PACX-1vQbYZwC-HcUDJK0JVkW4SC8j0DLDtVnCsR8uTmE_z3iSS8H9i9lmt5jB8FMVSVjQ_SDj_N56H-PfCtz/pub?gid=0&amp;single=true&amp;output=csv</a>';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>// ----------------------------------------------------</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let vocabData = [];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let currentIndex = -1;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Function to load the CSV data from Google Sheets</p>
+<p class="p1"><span class="Apple-converted-space">    </span>async function loadVocab() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const response = await fetch(GOOGLE_SHEET_URL);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const csvText = await response.text();</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Basic CSV parsing: split by line, then by comma (skip the header row)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const rows = csvText.split('\n').slice(1);<span class="Apple-converted-space"> </span></p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>vocabData = rows.map(row =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const columns = row.split(',');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (columns.length &gt;= 4) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>return {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>word: columns[0].trim(),</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>definition: columns[1].trim(),</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>example: columns[2].trim(),</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>band: columns[3].trim()</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>return null;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}).filter(Boolean); // Filter out any empty/bad rows</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (vocabData.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>vocabData = vocabData.sort(() =&gt; Math.random() - 0.5); // Shuffle the array</p>
+<p class="p1"><span class="Apple-converted-space">                </span>nextCard();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>document.getElementById('word').innerText = 'Error: No data loaded.';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>} catch (error) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>console.error('Error loading vocabulary:', error);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('word').innerText = 'Error loading data. Check console.';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Function to show the next card</p>
+<p class="p1"><span class="Apple-converted-space">    </span>function nextCard() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>currentIndex = (currentIndex + 1) % vocabData.length;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const currentWord = vocabData[currentIndex];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const wordElement = document.getElementById('word');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const defElement = document.getElementById('definition');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const exElement = document.getElementById('example');</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Reset and show word only</p>
+<p class="p1"><span class="Apple-converted-space">        </span>wordElement.innerText = currentWord.word;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>defElement.innerText = currentWord.definition;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>exElement.innerText = currentWord.example;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>defElement.style.display = 'none';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>exElement.style.display = 'none';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>wordElement.onclick = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (defElement.style.display === 'none') {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>defElement.style.display = 'block';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>exElement.style.display = 'block';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>defElement.style.display = 'none';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>exElement.style.display = 'none';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Load data when the page opens</p>
+<p class="p1"><span class="Apple-converted-space">    </span>loadVocab();</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
