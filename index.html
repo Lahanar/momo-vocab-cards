@@ -21,7 +21,7 @@
     <button onclick="prevCard()">Previous</button>
     <button onclick="nextCard()">Next</button>
     <button onclick="shuffleCards()">Shuffle</button>
-    <button onclick="toggleQuizMode()">Quiz Mode</button>
+    <!-- button onclick="toggleQuizMode()">Quiz Mode</button -->
   </div>
 
   <div id="filters">
@@ -54,7 +54,7 @@
   let cards = [];
   let filteredCards = [];
   let index = 0;
-  let quizMode = false;
+  //let quizMode = false;
 
   // SM-2 spaced repetition data
   let sm2Data = JSON.parse(localStorage.getItem("sm2Data") || "{}");
@@ -164,10 +164,10 @@
     speechSynthesis.speak(utt);
   }
 
-  function toggleQuizMode() {
-    quizMode = !quizMode;
-    alert("Quiz Mode " + (quizMode ? "ON" : "OFF"));
-  }
+  //function toggleQuizMode() {
+  //  quizMode = !quizMode;
+  //  alert("Quiz Mode " + (quizMode ? "ON" : "OFF"));
+  //}
 
   function rateCard(quality) {
     const card = filteredCards[index];
