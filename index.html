@@ -55,7 +55,7 @@ let quizMode = false;
 let sm2Data = JSON.parse(localStorage.getItem("sm2Data") || "{}");
 
 // Replace with your deployed backend URL
-const backendURL = "https://YOUR_BACKEND_URL/check-answer";
+const backendURL = "https://flashcard-backend-psi.vercel.app/check-answer";
 
 async function loadCSV() {
   const res = await fetch(csvURL);
