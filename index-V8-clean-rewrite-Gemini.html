@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Advanced Vocab Builder</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            margin: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        /* --- Controls & Filters --- */
+        .controls, .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        select, input[type="search"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-width: 150px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .nav-btn {
+            background-color: var(--primary);
+            color: white;
+        }
+        .nav-btn:hover { background-color: #0056b3; }
+
+        .shuffle-btn {
+            background-color: var(--success);
+            color: white;
+        }
+        .shuffle-btn:hover { background-color: #1e7e34; }
+
+        .quiz-btn {
+            background-color: var(--danger);
+            color: white;
+        }
+        .quiz-btn:hover { background-color: #a71d2a; }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            min-height: 250px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        #word {
+            font-size: 3em;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        #pos {
+            font-size: 1em;
+            color: var(--secondary);
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        #definition, #example {
+            font-size: 1.1em;
+            color: var(--text-color);
+            text-align: left;
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+        }
+        #example {
+            color: #5a6268;
+            font-style: italic;
+            border-bottom: 1px solid #eee;
+        }
+
+        .band-tag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #ffc107;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #343a40;
+        }
+        
+        .loading-text {
+            font-size: 1.5em;
+            color: var(--primary);
+            margin-top: 50px;
+        }
+
+        /* --- Quiz Mode --- */
+        #quiz-input-area {
+            display: none; /* Hidden by default */
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px dashed var(--danger);
+            border-radius: 10px;
+            background-color: #fff3f3;
+        }
+        #quiz-input-area input {
+            padding: 10px;
+            width: 70%;
+            border-radius: 5px;
+            border: 1px solid var(--danger);
+        }
+        #quiz-result {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>IELTS Band 8.0+ Vocab Builder</h1>
+
+    <div class="filter-controls">
+        <input type="search" id="search-input" placeholder="Search word, def, or example..." oninput="filterAndShuffle()">
+        <select id="band-filter" onchange="filterAndShuffle()">
+            <option value="">Filter by Band Level</option>
+        </select>
+        <select id="pos-filter" onchange="filterAndShuffle()">
+            <option value="">Filter by Part of Speech</option>
+        </select>
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" onclick="prevCard()">Previous</button>
+        <button class="nav-btn" onclick="nextCard()">Next Word</button>
+        <button class="shuffle-btn" onclick="shuffleData()">Shuffle All</button>
+        <button class="nav-btn" onclick="speakWord()">🔊 Pronounce</button>
+        <button class="quiz-btn" onclick="toggleQuizMode()">🧠 Quiz Mode</button>
+    </div>
+
+    <div class="card" id="flashcard">
+        <div id="word" onclick="toggleDefinition()">Loading...</div>
+        <div id="pos"></div>
+        <div id="definition" style="display:none;"></div>
+        <div id="example" style="display:none;"></div>
+        <div class="band-tag" id="band-level"></div>
+    </div>
+
+    <div id="quiz-input-area">
+        <p>Type the Word for the Definition:</p>
+        <input type="text" id="quiz-answer" placeholder="Enter word here..." onkeydown="if(event.key === 'Enter') checkQuizAnswer()">
+        <button class="quiz-btn" onclick="checkQuizAnswer()">Check Answer</button>
+        <div id="quiz-result"></div>
+    </div>
+
+    <div class="loading-text" id="status-message">Fetching vocabulary data...</div>
+
+</div>
+
+<script>
+    // --- Configuration ---
+    // IMPORTANT: REPLACE with your Google Sheet published to CSV URL.
+    const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQbYZwC-HcUDJK0JVkW4SC8j0DLDtVnCsR8uTmE_z3iSS8H9i9lmt5jB8FMVSVjQ_SDj_N56H-PfCtz/pub?gid=0&single=true&output=csv';
+    // ---------------------
+
+    let rawData = []; // Stores all data loaded from the sheet
+    let filteredData = []; // Stores the currently filtered/shuffled data
+    let currentIndex = -1;
+    let quizModeActive = false;
+    const synth = window.speechSynthesis;
+
+    // --- Data Loading and Filtering ---
+
+    async function loadVocab() {
+        const statusElement = document.getElementById('status-message');
+        statusElement.style.display = 'block';
+        
+        try {
+            const response = await fetch(GOOGLE_SHEET_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP Error! Status: ${response.status}`);
+            }
+            
+            const csvText = await response.text();
+            
+            // Basic CSV parsing: split by line, then by comma (skip the header row)
+            const rows = csvText.split('\n').slice(1).filter(row => row.trim() !== '');
+            
+            rawData = rows.map(row => {
+                // Simple split. Handles minor issues but expects quotes around fields with commas.
+                const columns = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(',');
+                
+                if (columns.length >= 5 && columns[0].trim()) {
+                    return {
+                        word: columns[0].trim().replace(/^"|"$/g, ''),
+                        definition: columns[1].trim().replace(/^"|"$/g, '') || 'No definition',
+                        example: columns[2].trim().replace(/^"|"$/g, '') || 'No example',
+                        pos: columns[3].trim().replace(/^"|"$/g, '') || 'N/A',
+                        band: columns[4].trim().replace(/^"|"$/g, '') || 'N/A'
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+
+            if (rawData.length > 0) {
+                populateFilters();
+                filterAndShuffle();
+                statusElement.style.display = 'none';
+            } else {
+                statusElement.innerText = 'Error: Data loaded, but no valid vocabulary found. Check your CSV structure.';
+            }
+
+        } catch (error) {
+            console.error('CRITICAL ERROR LOADING VOCAB:', error);
+            statusElement.innerText = `CRITICAL ERROR: ${error.message}. Check your Google Sheet URL and public settings.`;
+            document.getElementById('word').innerText = 'Data Load Error';
+        }
+    }
+
+    function populateFilters() {
+        const bandFilter = document.getElementById('band-filter');
+        const posFilter = document.getElementById('pos-filter');
+        
+        const bands = [...new Set(rawData.map(d => d.band))].sort();
+        const pos = [...new Set(rawData.map(d => d.pos))].sort();
+
+        bands.forEach(b => bandFilter.add(new Option(b, b)));
+        pos.forEach(p => posFilter.add(new Option(p, p)));
+    }
+
+    function filterAndShuffle() {
+        const bandValue = document.getElementById('band-filter').value;
+        const posValue = document.getElementById('pos-filter').value;
+        const searchValue = document.getElementById('search-input').value.toLowerCase();
+
+        filteredData = rawData.filter(item => {
+            const bandMatch = bandValue === '' || item.band === bandValue;
+            const posMatch = posValue === '' || item.pos === posValue;
+            
+            const searchMatch = searchValue === '' || 
+                                item.word.toLowerCase().includes(searchValue) ||
+                                item.definition.toLowerCase().includes(searchValue) ||
+                                item.example.toLowerCase().includes(searchValue);
+            
+            return bandMatch && posMatch && searchMatch;
+        });
+
+        shuffleData(false); // Shuffle the newly filtered set
+    }
+    
+    function shuffleData(resetIndex = true) {
+        if (filteredData.length > 0) {
+            filteredData.sort(() => Math.random() - 0.5); // Shuffle in place
+            if (resetIndex) {
+                currentIndex = -1;
+                nextCard();
+            } else {
+                 // Keep index if data set changes but don't move card
+                 if (currentIndex >= filteredData.length) currentIndex = 0;
+                 if (currentIndex === -1) currentIndex = 0;
+                 updateCard();
+            }
+        } else {
+            document.getElementById('word').innerText = 'No words match the current filters.';
+            document.getElementById('definition').style.display = 'none';
+            document.getElementById('example').style.display = 'none';
+        }
+    }
+
+    // --- Navigation and Display ---
+
+    function updateCard() {
+        if (filteredData.length === 0) return;
+        
+        if (currentIndex < 0) currentIndex = 0;
+        if (currentIndex >= filteredData.length) currentIndex = 0;
+
+        const currentItem = filteredData[currentIndex];
+        
+        document.getElementById('word').innerText = quizModeActive ? 'Click to Reveal' : currentItem.word;
+        document.getElementById('pos').innerText = quizModeActive ? currentItem.pos : `(${currentItem.pos})`;
+        document.getElementById('definition').innerHTML = `<strong>Definition:</strong> ${currentItem.definition}`;
+        document.getElementById('example').innerHTML = `<strong>Example:</strong> ${currentItem.example}`;
+        document.getElementById('band-level').innerText = currentItem.band;
+
+        // Reset visibility for flashcard mode
+        if (!quizModeActive) {
+            document.getElementById('definition').style.display = 'none';
+            document.getElementById('example').style.display = 'none';
+        } else {
+            document.getElementById('definition').style.display = 'block';
+            document.getElementById('example').style.display = 'none'; // Show definition only for quiz prompt
+        }
+
+        document.getElementById('quiz-result').innerText = ''; // Clear quiz result
+        document.getElementById('quiz-answer').value = ''; // Clear quiz input
+        
+        // Announce current position (optional)
+        console.log(`Current Index: ${currentIndex + 1}/${filteredData.length}`);
+    }
+
+    function nextCard() {
+        currentIndex = (currentIndex + 1) % filteredData.length;
+        updateCard();
+    }
+
+    function prevCard() {
+        currentIndex = (currentIndex - 1 + filteredData.length) % filteredData.length;
+        updateCard();
+    }
+    
+    function toggleDefinition() {
+        const defElement = document.getElementById('definition');
+        const exElement = document.getElementById('example');
+        const wordElement = document.getElementById('word');
+        
+        if (quizModeActive) {
+             // In quiz mode, reveal word and example on click
+            if (wordElement.innerText === 'Click to Reveal') {
+                wordElement.innerText = filteredData[currentIndex].word;
+                exElement.style.display = 'block';
+            } else {
+                // Clicking again hides it for the next attempt/card
+                nextCard();
+            }
+        } else {
+             // Standard flashcard toggle
+            if (defElement.style.display === 'none') {
+                defElement.style.display = 'block';
+                exElement.style.display = 'block';
+            } else {
+                defElement.style.display = 'none';
+                exElement.style.display = 'none';
+            }
+        }
+    }
+
+    // --- Web Speech API (Pronunciation) ---
+    function speakWord() {
+        if (!synth) {
+            alert("Your browser does not support the Web Speech API.");
+            return;
+        }
+        
+        if (filteredData.length > 0) {
+            const wordToSpeak = filteredData[currentIndex].word;
+            const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+            utterance.lang = 'en-US'; // Set language for best pronunciation
+            synth.speak(utterance);
+        }
+    }
+    
+    // --- Quiz Mode ---
+
+    function toggleQuizMode() {
+        quizModeActive = !quizModeActive;
+        const quizArea = document.getElementById('quiz-input-area');
+        const flashcard = document.getElementById('flashcard');
+        const quizButton = document.querySelector('.quiz-btn');
+
+        if (quizModeActive) {
+            // Enter Quiz Mode
+            quizArea.style.display = 'block';
+            quizButton.textContent = 'Exit Quiz Mode';
+            flashcard.style.cursor = 'default';
+            
+            // Set Quiz Prompt: Show POS and Definition, hide Example/Word
+            document.getElementById('definition').style.display = 'block';
+            document.getElementById('example').style.display = 'none';
+            document.getElementById('word').innerText = 'Guess the Word';
+            document.getElementById('pos').innerText = `(${filteredData[currentIndex].pos})`;
+            document.getElementById('quiz-result').innerText = '';
+
+        } else {
+            // Exit Quiz Mode
+            quizArea.style.display = 'none';
+            quizButton.textContent = '🧠 Quiz Mode';
+            flashcard.style.cursor = 'pointer';
+            
+            // Return to Flashcard Mode
+            updateCard();
+        }
+    }
+
+    // Placeholder function for AI check (as a live backend is required)
+    function checkQuizAnswer() {
+        if (!quizModeActive) return;
+
+        const currentWord = filteredData[currentIndex].word.toLowerCase();
+        const userAnswer = document.getElementById('quiz-answer').value.toLowerCase().trim();
+        const resultElement = document.getElementById('quiz-result');
+        
+        // Simple string comparison for the quiz.
+        const isCorrect = userAnswer === currentWord;
+
+        if (isCorrect) {
+            resultElement.innerText = '✅ Correct! Moving to the next word.';
+            resultElement.style.color = var(--success);
+            setTimeout(() => nextCard(), 1000); // Move on after a slight delay
+        } else {
+             // **This is where a real AI check (via a deployed backend) would go.**
+             // The AI would evaluate if the user's word is a *synonym* or *related term*
+             // For now, we use simple matching.
+            resultElement.innerText = `❌ Incorrect. Try again, or click 'Guess the Word' to reveal the answer.`;
+            resultElement.style.color = var(--danger);
+        }
+    }
+
+    // --- Initial Load ---
+    loadVocab();
+</script>
+
+</body>
+</html>
