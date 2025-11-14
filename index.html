@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+resultElement.style.color = getComputedStyle(document.documentElement)
+                                .getPropertyValue('--success');<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -434,14 +435,14 @@
 
         if (isCorrect) {
             resultElement.innerText = '✅ Correct! Moving to the next word.';
-            resultElement.style.color = var(--success);
+            resultElement.style.color = getComputedStyle(document.documentElement).getPropertyValue('--success');
             setTimeout(() => nextCard(), 1000); // Move on after a slight delay
         } else {
              // **This is where a real AI check (via a deployed backend) would go.**
              // The AI would evaluate if the user's word is a *synonym* or *related term*
              // For now, we use simple matching.
             resultElement.innerText = `❌ Incorrect. Try again, or click 'Guess the Word' to reveal the answer.`;
-            resultElement.style.color = var(--danger);
+            resultElement.style.color = getComputedStyle(document.documentElement).getPropertyValue('--danger');
         }
     }
 
