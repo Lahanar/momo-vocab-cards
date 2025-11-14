@@ -210,6 +210,39 @@
 
     // --- Data Loading and Filtering ---
 
+    // Parse CSV safely and map by header title
+function parseCSV(csvText) {
+    const lines = csvText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+
+    const wordIndex      = header.indexOf("word");
+    const defIndex       = header.indexOf("definition");
+    const exampleIndex   = header.indexOf("example");
+    const posIndex       = header.indexOf("pos");
+    const bandIndex      = header.indexOf("band");
+
+    if (wordIndex === -1) {
+        console.error("ERROR: CSV header missing 'word' column.");
+        return [];
+    }
+
+    let data = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+
+        data.push({
+            word:       (cols[wordIndex] || "").replace(/^"|"$/g, ''),
+            definition: (cols[defIndex] || "").replace(/^"|"$/g, ''),
+            example:    (cols[exampleIndex] || "").replace(/^"|"$/g, ''),
+            pos:        (cols[posIndex] || "").replace(/^"|"$/g, ''),
+            band:       (cols[bandIndex] || "").replace(/^"|"$/g, '')
+        });
+    }
+
+    return data;
+}
+
     async function loadVocab() {
         const statusElement = document.getElementById('status-message');
         statusElement.style.display = 'block';
@@ -222,24 +255,8 @@
             
             const csvText = await response.text();
             
-            // Basic CSV parsing: split by line, then by comma (skip the header row)
-            const rows = csvText.split('\n').slice(1).filter(row => row.trim() !== '');
-            
-            rawData = rows.map(row => {
-                // Simple split. Handles minor issues but expects quotes around fields with commas.
-                const columns = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(',');
-                
-                if (columns.length >= 5 && columns[0].trim()) {
-                    return {
-                        word: columns[0].trim().replace(/^"|"$/g, ''),
-                        definition: columns[1].trim().replace(/^"|"$/g, '') || 'No definition',
-                        example: columns[2].trim().replace(/^"|"$/g, '') || 'No example',
-                        pos: columns[3].trim().replace(/^"|"$/g, '') || 'N/A',
-                        band: columns[4].trim().replace(/^"|"$/g, '') || 'N/A'
-                    };
-                }
-                return null;
-            }).filter(Boolean);
+            // Parse CSV safely and map by header title
+            rawData = parseCSV(csvText);
 
             if (rawData.length > 0) {
                 populateFilters();
