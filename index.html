@@ -57,6 +57,7 @@ let sm2Data = JSON.parse(localStorage.getItem("sm2Data") || "{}");
 // Replace with your deployed backend URL
 const backendURL = "https://flashcard-backend-psi.vercel.app/check-answer";
 
+// Load CSV
 async function loadCSV() {
   const res = await fetch(csvURL);
   const text = await res.text();
@@ -78,6 +79,7 @@ function parseCSV(text) {
   });
 }
 
+// Populate filters
 function populateFilters() {
   const bandSet = new Set(cards.map(c => c.Band_Level));
   const posSet = new Set(cards.map(c => c.POS));
@@ -87,38 +89,52 @@ function populateFilters() {
   posSet.forEach(p => { if (![...posFilter.options].some(o=>o.value===p)) posFilter.innerHTML += `<option value="${p}">${p}</option>`; });
 }
 
+// Show card
 function showCard() {
   const card = filteredCards[index];
   if(!card) return;
-  document.getElementById('word').textContent = card.Word;
+
+  const cardElement = document.getElementById('flashcard');
+  if(!cardElement) return;
+
+  // Initially show the WORD
+  cardElement.textContent = card.Word;
+  cardElement.replaceWith(cardElement.cloneNode(true));
+  const newCardElement = document.getElementById('flashcard');
+
+  // Pronounce the word
+  speak(card.Word);
+
+  // Toggle definition + example on click if not in quiz mode
+  newCardElement.addEventListener("click", () => {
+    if(quizMode) return; // disable toggle in quiz mode
+    if(newCardElement.textContent === card.Word){
+      newCardElement.innerHTML = `<strong>${card.Definition}</strong><br><em>${card.Example_Sentence}</em>`;
+    } else {
+      newCardElement.textContent = card.Word;
+      speak(card.Word);
+    }
+  });
+
+  // Quiz Mode input / feedback
   document.getElementById('definition').textContent = "Definition: " + card.Definition;
   document.getElementById('example').textContent = "Example: " + card.Example_Sentence;
   document.getElementById('definition').classList.add('hidden');
   document.getElementById('example').classList.add('hidden');
   document.getElementById('quizInput').value = "";
   document.getElementById('feedback').textContent = "";
+  if(quizMode) document.getElementById('quizInput').classList.remove('hidden');
+  else document.getElementById('quizInput').classList.add('hidden');
 
-  if(quizMode){
-    document.getElementById('quizInput').classList.remove('hidden');
-  } else {
-    document.getElementById('quizInput').classList.add('hidden');
-  }
-
-  speak(card.Word);
   updateProgress();
 }
 
-function toggleInfo() {
-  if(!quizMode){
-    document.getElementById('definition').classList.toggle('hidden');
-    document.getElementById('example').classList.toggle('hidden');
-  }
-}
-
+// Next / Previous / Shuffle
 function nextCard() { index=(index+1)%filteredCards.length; saveProgress(); showCard(); }
 function prevCard() { index=(index-1+filteredCards.length)%filteredCards.length; saveProgress(); showCard(); }
 function shuffleCards() { filteredCards.sort(()=>Math.random()-0.5); index=0; saveProgress(); showCard(); }
 
+// Filters
 function applyFilters() {
   const search = document.getElementById("search").value.toLowerCase();
   const band = document.getElementById("bandFilter").value;
@@ -133,12 +149,15 @@ function applyFilters() {
   index=0; showCard();
 }
 
+// Progress
 function updateProgress() { document.getElementById("progress").textContent=`Card ${index+1} / ${filteredCards.length}`; }
 function saveProgress() { localStorage.setItem("flashcardIndex", index); }
 function loadProgress() { index = Number(localStorage.getItem("flashcardIndex"))||0; }
 
-function speak(text) { const utt=new SpeechSynthesisUtterance(text); speechSynthesis.cancel(); speechSynthesis.speak(utt); }
+// Speech
+function speak(text) { const utt=new SpeechSynthesisUtterance(text); utt.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(utt); }
 
+// Quiz Mode toggle
 function toggleQuizMode() { quizMode = !quizMode; showCard(); alert("Quiz Mode "+(quizMode?"ON":"OFF")); }
 
 // AI-powered Quiz Check
@@ -189,8 +208,10 @@ function rateCard(quality){
   localStorage.setItem("sm2Data", JSON.stringify(sm2Data));
 }
 
+// Initialize
 loadCSV();
 </script>
+
 
 </body>
 </html>
